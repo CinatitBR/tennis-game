@@ -11,6 +11,7 @@
 #define BALL_SPAWN_INTERVAL 5
 #define MAX_BALL_COUNT 12
 
+#define MAX_POINTS 2
 #define PLAYER_SPEED 2
 
 // Print a warning if method failed to initialize
@@ -145,6 +146,7 @@ int main() {
     must_init(al_init(), "allegro");
     must_init(al_install_keyboard(), "keyboard");
     must_init(al_init_primitives_addon(), "primitives");
+    must_init(al_init_font_addon(), "font");
 
     // Primitives antialising
     al_set_new_display_option(ALLEGRO_SAMPLE_BUFFERS, 1, ALLEGRO_SUGGEST);
@@ -164,6 +166,7 @@ int main() {
     bool redraw = true;
     bool done = false;
 
+    // ALLEGRO_FONT* font = al_create_builtin_font();
     ALLEGRO_FONT* font = al_create_builtin_font();
     ALLEGRO_EVENT event;
     ALLEGRO_KEYBOARD_STATE keyboardState;
@@ -210,8 +213,38 @@ int main() {
     players[1] = &player2;
 
     int field_limit_y = DISPLAY_HEIGHT / 2;
-
     int ball_spawn_interval = FPS * BALL_SPAWN_INTERVAL;
+
+    void draw_balls() {
+        for (int i = 0; i < ball_count; i++) {
+            al_draw_filled_circle(balls[i]->x, balls[i]->y, balls[i]->width, al_map_rgb(137, 71, 187));
+        }
+    }
+
+    void draw_players() {
+        // Renders players
+        for (int i = 0; i < 2; i++) {
+            al_draw_filled_rectangle(
+                players[i]->x, 
+                players[i]->y, 
+                players[i]->x + players[i]->width, 
+                players[i]->y + players[i]->height, 
+                al_map_rgb(240, 84, 84)
+            );
+        }
+    }
+
+    void draw_points() {
+        // Renders player2 points
+        al_draw_textf(font, al_map_rgb(255, 255, 255), 30, 30, 0, "Pontuação: %d", player2_points);
+
+        // Renders player1 points
+        al_draw_textf(font, al_map_rgb(255, 255, 255), 30, DISPLAY_HEIGHT - 30, 0, "Pontuação: %d", player1_points);
+    }
+
+    bool is_game_finished() {
+        return player1_points >= MAX_POINTS || player2_points >= MAX_POINTS;
+    }
 
     al_start_timer(timer);
     while(1) {
@@ -393,27 +426,24 @@ int main() {
         if (redraw && is_queue_empty) {
             al_clear_to_color(al_map_rgb(58, 63, 71));
 
-            // Renders balls
-            for (int i = 0; i < ball_count; i++) {
-                al_draw_filled_circle(balls[i]->x, balls[i]->y, balls[i]->width, al_map_rgb(137, 71, 187));
+            if (is_game_finished()) {
+                char text[50];
+
+                if (player1_points >= 10) {
+                    sprintf(text, "P L A Y E R  1  W O N");
+                } else {
+                    sprintf(text, "P L A Y E R  1  W O N");
+                }
+
+                al_draw_text(font, al_map_rgb(255, 255, 255), 400, DISPLAY_HEIGHT / 2, 0, text);
             }
 
-            // Renders players
-            for (int i = 0; i < 2; i++) {
-                al_draw_filled_rectangle(
-                    players[i]->x, 
-                    players[i]->y, 
-                    players[i]->x + players[i]->width, 
-                    players[i]->y + players[i]->height, 
-                    al_map_rgb(240, 84, 84)
-                );
+            else {
+                draw_balls();
+                draw_players();
+                draw_points();
             }
 
-            // player2 points
-            al_draw_textf(font, al_map_rgb(255, 255, 255), 30, 30, 0, "Pontuação: %d", player2_points);
-
-            // player1 points
-            al_draw_textf(font, al_map_rgb(255, 255, 255), 30, DISPLAY_HEIGHT - 30, 0, "Pontuação: %d", player1_points);
 
             al_flip_display();
             redraw = false;
